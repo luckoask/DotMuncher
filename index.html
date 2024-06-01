@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agar.io Singleplayer</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: black;
+        }
+        canvas {
+            display: block;
+        }
+        #overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            font-size: 24px;
+            visibility: hidden;
+        }
+        #overlay button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <div id="overlay">
+        <div id="message"></div>
+        <button id="restartButton">Restart</button>
+    </div>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const overlay = document.getElementById('overlay');
+        const message = document.getElementById('message');
+        const restartButton = document.getElementById('restartButton');
+
+        let score = 0;
+        let isPaused = false;
+        let isGameOver = false;
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const player = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            size: 10,
+            color: 'white',
+        };
+
+        let dots = [];
+
+        for (let i = 0; i < 100; i++) {
+            let dotSize;
+            if (i % 10 === 0) { // 10% bigger dots as barriers
+                dotSize = player.size + 40; // Larger barrier dots
+            } else if (i % 10 < 7) { // 60% bigger dots
+                dotSize = player.size + 15; // Larger dots
+            } else { // 30% smaller dots
+                dotSize = player.size - 3; // Smaller dots
+            }
+            dots.push(createDot(dotSize));
+        }
+
+        function createDot(baseSize) {
+            let dotSize = baseSize;
+            const spawnSide = Math.floor(Math.random() * 4); // Randomly choose a side (0=top, 1=right, 2=bottom, 3=left)
+
+            let x, y;
+
+            switch (spawnSide) {
+                case 0: // Top side
+                    x = Math.random() * canvas.width;
+                    y = -baseSize;
+                    break;
+                case 1: // Right side
+                    x = canvas.width + baseSize;
+                    y = Math.random() * canvas.height;
+                    break;
+                case 2: // Bottom side
+                    x = Math.random() * canvas.width;
+                    y = canvas.height + baseSize;
+                    break;
+                case 3: // Left side
+                    x = -baseSize;
+                    y = Math.random() * canvas.height;
+                    break;
+            }
+
+            return {
+                x: x,
+                y: y,
+                size: dotSize,
+                color: getRandomColor(),
+                dx: (Math.random() - 0.5) * 2,
+                dy: (Math.random() - 0.5) * 2,
+                isBarrier: baseSize > player.size + 10 // Mark dot as barrier if it's larger than player size + 10
+            };
+        }
+
+        function getRandomColor() {
+            const colors = ['red', 'green', 'blue', 'purple', 'orange', 'cyan', 'pink', 'yellow'];
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
+
+        function drawDot(dot) {
+            ctx.beginPath();
+            ctx.arc(dot.x, dot.y, dot.size, 0, Math.PI * 2);
+            ctx.fillStyle = dot.color;
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        function movePlayer(mouseX, mouseY) {
+            player.x = mouseX;
+            player.y = mouseY;
+
+            if (player.x - player.size < 0) player.x = player.size;
+            if (player.x + player.size > canvas.width) player.x = canvas.width - player.size;
+            if (player.y - player.size < 0) player.y = player.size;
+            if (player.y + player.size > canvas.height) player.y = canvas.height - player.size;
+        }
+
+        function detectCollision(dot1, dot2) {
+            if (dot1 === player || dot2 === player) {
+                const dist = Math.hypot(dot1.x - dot2.x, dot1.y - dot2.y);
+                return dist < dot1.size + dot2.size;
+            }
+            return false;
+        }
+
+        function updateGame() {
+            if (isPaused || isGameOver) {
+                return;
+            }
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            dots.forEach((dot, index) => {
+                dot.x += dot.dx;
+                dot.y += dot.dy;
+
+                if (dot.x - dot.size > canvas.width || dot.x + dot.size < 0 || dot.y - dot.size > canvas.height || dot.y + dot.size < 0) {
+                    dots[index] = createDot(dot.size > player.size ? player.size + 5 : player.size - 3);
+                }
+
+                if (detectCollision(dot, player)) {
+                    if (!dot.isBarrier && dot.size < player.size) {
+                        player.size += 0.5;
+                        dots.splice(index, 1);
+                        dots.push(createDot(player.size - 3));
+                        score += 1; // Increase score by 1 for each dot eaten
+                    } else if (dot.isBarrier) {
+                        // Player collided with a barrier dot
+                        // Handle barrier collision logic here (e.g., decrease player size, stop player movement)
+                        // For now, let's just stop the player movement
+                        isGameOver = true;
+                        message.innerHTML = `Game Over! Score: ${score}`;
+                        overlay.style.visibility = 'visible';
+                    } else {
+                        // Player collided with a dot bigger than itself
+                        isGameOver = true;
+                        message.innerHTML = `Game Over! Score: ${score}`;
+                        overlay.style.visibility = 'visible';
+                    }
+                }
+
+                drawDot(dot);
+            });
+
+            drawDot(player);
+
+            requestAnimationFrame(updateGame);
+        }
+
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            movePlayer(mouseX, mouseY);
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                isPaused = !isPaused;
+                if (isPaused) {
+                    message.innerHTML = `Paused! Score:
+                    ${score}`;
+                    overlay.style.visibility = 'visible';
+                } else {
+                    overlay.style.visibility = 'hidden';
+                    updateGame();
+                }
+            }
+        });
+
+        restartButton.addEventListener('click', () => {
+            player.size = 10;
+            score = 0;
+            isGameOver = false;
+            overlay.style.visibility = 'hidden';
+            dots = [];
+            for (let i = 0; i < 100; i++) {
+                let dotSize;
+                if (i % 10 === 0) { // 10% bigger dots as barriers
+                    dotSize = player.size + 40; // Larger barrier dots
+                } else if (i % 10 < 7) { // 60% bigger dots
+                    dotSize = player.size + 15; // Larger dots
+                } else { // 30% smaller dots
+                    dotSize = player.size - 3; // Smaller dots
+                }
+                dots.push(createDot(dotSize));
+            }
+            updateGame();
+        });
+
+        updateGame();
+        
+        canvas.style.cursor = 'none';
+    </script>
+</body>
+</html>
