@@ -195,12 +195,40 @@
             movePlayer(mouseX, mouseY);
         });
 
+        // Function to handle touch events
+        function handleTouch(e) {
+            const touch = e.touches[0]; // Get the first touch (supports only single touch)
+            const rect = canvas.getBoundingClientRect();
+            const touchX = touch.clientX - rect.left;
+            const touchY = touch.clientY - rect.top;
+            movePlayer(touchX, touchY);
+        }
+
+        // Add touch event listeners
+        canvas.addEventListener('touchmove', handleTouch, { passive: false });
+
+        // Prevent scrolling while touching the canvas
+        document.body.addEventListener('touchstart', function (e) {
+            if (e.target == canvas) {
+                e.preventDefault();
+            }
+        }, false);
+        document.body.addEventListener('touchend', function (e) {
+            if (e.target == canvas) {
+                e.preventDefault();
+            }
+        }, false);
+        document.body.addEventListener('touchmove', function (e) {
+            if (e.target == canvas) {
+                e.preventDefault();
+            }
+        }, false);
+
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 isPaused = !isPaused;
                 if (isPaused) {
-                    message.innerHTML = `Paused! Score
-                    : ${score}`;
+                    message.innerHTML = `Paused! Score: ${score}`;
                     overlay.style.visibility = 'visible';
                 } else {
                     overlay.style.visibility = 'hidden';
