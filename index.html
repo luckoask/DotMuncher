@@ -65,7 +65,7 @@
 
         let dots = [];
 
-        for (let i = 0; i < 100; i++) {
+        for (let i = 0; i < 350; i++) { // Changed from 100 to 350
             let dotSize;
             if (i % 10 === 0) { // 10% bigger dots as barriers
                 dotSize = player.size + 40; // Larger barrier dots
@@ -199,8 +199,8 @@
             if (e.key === 'Escape') {
                 isPaused = !isPaused;
                 if (isPaused) {
-                    message.innerHTML = `Paused! Score:
-                    ${score}`;
+                    message.innerHTML = `Paused! Score
+                    : ${score}`;
                     overlay.style.visibility = 'visible';
                 } else {
                     overlay.style.visibility = 'hidden';
@@ -215,7 +215,7 @@
             isGameOver = false;
             overlay.style.visibility = 'hidden';
             dots = [];
-            for (let i = 0; i < 100; i++) {
+            for (let i = 0; i < 350; i++) { // Changed from 100 to 350
                 let dotSize;
                 if (i % 10 === 0) { // 10% bigger dots as barriers
                     dotSize = player.size + 40; // Larger barrier dots
@@ -230,7 +230,7 @@
         });
 
         updateGame();
-        
+
         canvas.style.cursor = 'none';
     </script>
 </body>
